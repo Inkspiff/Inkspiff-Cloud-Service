@@ -128,3 +128,4 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+inkspiff-ai-agent.2024-01-02.private-key.pem
