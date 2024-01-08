@@ -35,30 +35,34 @@ async function handlePullRequestOpened({ octokit, payload }) {
     `Received a pull request event for #${payload.pull_request.number}`
   );
   console.log(`${messageForNewPRs} \n ${payload.pull_request.diff_url}`);
-  console.log(`Pull request from ${payload.pull_request.head.label} to ${payload.pull_request.base.label}`);
-  console.log(`Base repo ref ${payload.pull_request.base.ref} and default branch ${payload.repository.default_branch}`);
-  console.log(`Pull is to default branch? ... ${payload.pull_request.base.ref == payload.repository.default_branch}`);
+  console.log(
+    `Pull request from ${payload.pull_request.head.label} to ${payload.pull_request.base.label}`
+  );
 
-  try {
-    await octokit.request(
-      "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
-      {
-        owner: payload.repository.owner.login,
-        repo: payload.repository.name,
-        issue_number: payload.pull_request.number,
-        body: `${messageForNewPRs} \n ${payload.pull_request.diff_url}`,
-        headers: {
-          "x-github-api-version": "2022-11-28",
-        },
-      }
-    );
-  } catch (error) {
-    if (error.response) {
-      console.error(
-        `Error! Status: ${error.response.status}. Message: ${error.response.data.message}`
+  if (payload.pull_request.base.ref == payload.repository.default_branch) {
+    try {
+      await octokit.request(
+        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+        {
+          owner: payload.repository.owner.login,
+          repo: payload.repository.name,
+          issue_number: payload.pull_request.number,
+          body: `${messageForNewPRs} \n${payload.pull_request.diff_url}`,
+          headers: {
+            "x-github-api-version": "2022-11-28",
+          },
+        }
       );
+    } catch (error) {
+      if (error.response) {
+        console.error(
+          `Error! Status: ${error.response.status}. Message: ${error.response.data.message}`
+        );
+      }
+      console.error(error);
     }
-    console.error(error);
+  } else {
+    console.log("Pull request not to default branch");
   }
 }
 
