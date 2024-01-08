@@ -36,6 +36,8 @@ async function handlePullRequestOpened({ octokit, payload }) {
   );
   console.log(`${messageForNewPRs} \n ${payload.pull_request.diff_url}`);
   console.log(`Pull request from ${payload.pull_request.head.label} to ${payload.pull_request.base.label}`);
+  console.log(`Base repo ref ${payload.pull_request.base.ref} and default branch ${payload.repository.default_branch}`);
+  console.log(`Pull is to default branch? ... ${payload.pull_request.base.ref == payload.repository.default_branch}`);
 
   try {
     await octokit.request(
