@@ -34,6 +34,10 @@ async function handlePullRequestOpened({ octokit, payload }) {
   console.log(
     `Received a pull request event for #${payload.pull_request.number}`
   );
+  console.log(`${messageForNewPRs} \n ${payload.pull_request.diff_url}`);
+  console.log(`Pull request from ${payload.pull_request.head.label} to ${payload.pull_request.base.label}`);
+  console.log(`Base repo ref ${payload.pull_request.base.ref} and default branch ${payload.pull_request.repo.default_branch}`);
+  console.log(`Pull is to default branch? ... ${payload.pull_request.base.ref == payload.pull_request.repo.default_branch}`);
 
   try {
     await octokit.request(
@@ -42,7 +46,7 @@ async function handlePullRequestOpened({ octokit, payload }) {
         owner: payload.repository.owner.login,
         repo: payload.repository.name,
         issue_number: payload.pull_request.number,
-        body: messageForNewPRs,
+        body: `${messageForNewPRs} \n ${payload.pull_request.diff_url}`,
         headers: {
           "x-github-api-version": "2022-11-28",
         },
