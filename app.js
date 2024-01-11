@@ -2,11 +2,10 @@
 //
 // You installed the `dotenv` and `octokit` modules earlier. The `@octokit/webhooks` is a dependency of the `octokit` module, so you don't need to install it separately. The `fs` and `http` dependencies are built-in Node.js modules.
 import dotenv from "dotenv";
-// import express from "express";
+import express from "express";
 import { App } from "octokit";
 import { createNodeMiddleware } from "@octokit/webhooks";
 import fs from "fs";
-import http from "http";
 
 dotenv.config();
 
@@ -17,7 +16,7 @@ const privateKeyPath = process.env.PRIVATE_KEY_PATH;
 const privateKey = fs.readFileSync(privateKeyPath, "utf8");
 
 // This creates a new instance of the Octokit App class.
-const githubApp = new App({
+const app = new App({
   appId: appId,
   privateKey: privateKey,
   webhooks: {
@@ -67,10 +66,10 @@ async function handlePullRequestOpened({ octokit, payload }) {
 }
 
 // This sets up a webhook event listener. When your githubApp receives a webhook event from GitHub with a `X-GitHub-Event` header value of `pull_request` and an `action` payload value of `opened`, it calls the `handlePullRequestOpened` event handler that is defined above.
-githubApp.webhooks.on("pull_request.opened", handlePullRequestOpened);
+app.webhooks.on("pull_request.opened", handlePullRequestOpened);
 
 // This logs any errors that occur.
-githubApp.webhooks.onError((error) => {
+app.webhooks.onError((error) => {
   if (error.name === "AggregateError") {
     console.error(`Error processing request: ${error.event}`);
   } else {
@@ -82,9 +81,7 @@ githubApp.webhooks.onError((error) => {
 //
 // For local development, your server will listen to port 3000 on `localhost`. When you deploy your githubApp, you will change these values. For more information, see "[Deploy your githubApp](#deploy-your-githubApp)."
 const port = 3000;
-const host = "localhost";
 const path = "/api/webhook";
-const localWebhookUrl = `http://${host}:${port}${path}`;
 
 // This sets up a middleware function to handle incoming webhook events.
 //
@@ -93,10 +90,14 @@ const localWebhookUrl = `http://${host}:${port}${path}`;
 //    - Check the signature of the incoming webhook event to make sure that it matches your webhook secret. This verifies that the incoming webhook event is a valid GitHub event.
 //    - Parse the webhook event payload and identify the type of event.
 //    - Trigger the corresponding webhook event handler.
-const middleware = createNodeMiddleware(githubApp.webhooks, { path });
+const middleware = createNodeMiddleware(app.webhooks, { path });
 
-// This creates a Node.js server that listens for incoming HTTP requests (including webhook payloads from GitHub) on the specified port. When the server receives a request, it executes the `middleware` function that you defined earlier. Once the server is running, it logs messages to the console to indicate that it is listening.
-http.createServer(middleware).listen(port, () => {
-  console.log(`Server is listening for events at: ${localWebhookUrl}`);
+// This creates a express.js server that listens for incoming HTTP requests (including webhook payloads from GitHub) on the specified port. When the server receives a request, it executes the `middleware` function that you defined earlier. Once the server is running, it logs messages to the console to indicate that it is listening.
+const appServer = express();
+appServer.use(express.json()); // Parse incoming JSON requests
+appServer.use(path, middleware);
+
+appServer.listen(port, () => {
+  console.log(`Server is listening for events at: ${port}${path}`);
   console.log("Press Ctrl + C to quit.");
 });
