@@ -30,7 +30,7 @@ async function handlePullRequestOpened({ octokit, payload }) {
           owner: payload.repository.owner.login,
           repo: payload.repository.name,
           issue_number: payload.pull_request.number,
-          body: `Spotted some neat updates in your PR! But before it merges, let's use Inkspiff's AI to keep documentation in sync.
+          body: `Spotted some neat updates in your PR! But before it merges, let's use Inkspiff's AI to keep your documentation in sync.
           \n✨ https://inkspiff.com/${payload.repository.full_name}/pulls/${payload.number}/ ✨`,
           headers: {
             "x-github-api-version": "2022-11-28",
