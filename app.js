@@ -21,18 +21,7 @@ const octokitApp = new App({
   },
 });
 
-const messageForNewPRs =
-  "Thanks for opening a new PR! Please follow our contributing guidelines to make your PR easier to review.";
-
 async function handlePullRequestOpened({ octokit, payload }) {
-  console.log(
-    `Received a pull request event for #${payload.pull_request.number}`
-  );
-  console.log(`${messageForNewPRs} \n ${payload.pull_request.diff_url}`);
-  console.log(
-    `Pull request from ${payload.pull_request.head.label} to ${payload.pull_request.base.label}`
-  );
-
   if (payload.pull_request.base.ref == payload.repository.default_branch) {
     try {
       await octokit.request(
@@ -41,7 +30,8 @@ async function handlePullRequestOpened({ octokit, payload }) {
           owner: payload.repository.owner.login,
           repo: payload.repository.name,
           issue_number: payload.pull_request.number,
-          body: `${messageForNewPRs} \n${payload.pull_request.diff_url}`,
+          body: `Spotted some neat updates in your PR! But before it merges, let's use Inkspiff's AI to keep documentation in sync.
+          \n✨ https://inkspiff.com/${payload.repository.full_name}/pulls/${payload.number}/ ✨`,
           headers: {
             "x-github-api-version": "2022-11-28",
           },
