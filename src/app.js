@@ -13,6 +13,7 @@ const port = process.env.PORT || 3000;
 const editorUrl = process.env.INKSPIFF_EDITOR_URL;
 
 async function handlePullRequestOpened({ octokit, payload }) {
+  console.log(payload.repository.full_name);
   if (payload.pull_request.base.ref == payload.repository.default_branch) {
     const q = query(
       mdCollection,
