@@ -14,7 +14,6 @@ const editorUrl = process.env.INKSPIFF_EDITOR_URL;
 
 async function handlePullRequestOpened({ octokit, payload }) {
   if (payload.pull_request.base.ref == payload.repository.default_branch) {
-    // Create a query to get markdowns associated with the PR repository
     const q = query(
       mdCollection,
       where("github", "==", payload.repository.full_name)
@@ -24,9 +23,9 @@ async function handlePullRequestOpened({ octokit, payload }) {
       .then((querySnapshot) => {
         const markdownEditorUrls = [];
         querySnapshot.forEach((doc) => {
-          markdownEditorUrls.push(
-            `\n✨ ${editorUrl}/${doc.id}?pr=${payload.number} ✨`
-          );
+          const fancyLink = `\n✨ ${editorUrl}/${doc.id}?pr=${payload.number} ✨`;
+          markdownEditorUrls.push(fancyLink);
+          console.log(fancyLink);
         });
       })
       .catch((error) => {
