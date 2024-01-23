@@ -19,14 +19,14 @@ async function handlePullRequestOpened({ octokit, payload }) {
       mdCollection,
       where("github", "==", payload.repository.full_name)
     );
+    let mdEditors = [];
 
     getDocs(q)
       .then((querySnapshot) => {
-        const markdownEditorUrls = [];
         querySnapshot.forEach((doc) => {
-          const fancyUrl = `\n✨ ${editorUrl}/${doc.id}?pr=${payload.number} ✨`;
-          markdownEditorUrls.push(fancyUrl);
-          console.log(fancyUrl);
+          const stylizedUrl = `\n✨ ${editorUrl}/${doc.id}?pr=${payload.number} ✨`;
+          mdEditors.push(stylizedUrl);
+          console.log(stylizedUrl);
         });
       })
       .catch((error) => {
@@ -40,7 +40,7 @@ async function handlePullRequestOpened({ octokit, payload }) {
           owner: payload.repository.owner.login,
           repo: payload.repository.name,
           issue_number: payload.pull_request.number,
-          body: `Spotted some neat updates in your PR! But before it merges, let's use Inkspiff's AI to keep your documentation in sync.${markdownEditorUrls.join()}`,
+          body: `Spotted some neat updates in your PR! But before it merges, let's use Inkspiff's AI to keep your documentation in sync.${mdEditors.join()}`,
           headers: {
             "x-github-api-version": "2022-11-28",
           },
