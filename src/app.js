@@ -23,9 +23,9 @@ async function handlePullRequestOpened({ octokit, payload }) {
       .then((querySnapshot) => {
         const markdownEditorUrls = [];
         querySnapshot.forEach((doc) => {
-          const fancyLink = `\n✨ ${editorUrl}/${doc.id}?pr=${payload.number} ✨`;
-          markdownEditorUrls.push(fancyLink);
-          console.log(fancyLink);
+          const fancyUrl = `\n✨ ${editorUrl}/${doc.id}?pr=${payload.number} ✨`;
+          markdownEditorUrls.push(fancyUrl);
+          console.log(fancyUrl);
         });
       })
       .catch((error) => {
