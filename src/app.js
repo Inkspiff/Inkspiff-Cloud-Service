@@ -19,41 +19,41 @@ async function handlePullRequestOpened({ octokit, payload }) {
       mdCollection,
       where("github", "==", payload.repository.full_name)
     );
-    let mdEditors = [];
 
-    getDocs(q)
+    await getDocs(q)
       .then((querySnapshot) => {
+        let mdEditors = [];
         querySnapshot.forEach((doc) => {
           const stylizedUrl = `\n✨ ${editorUrl}/${doc.id}?pr=${payload.number} ✨`;
           mdEditors.push(stylizedUrl);
           console.log(stylizedUrl);
         });
+        console.log(mdEditors);
+        try {
+          octokit.request(
+            "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+            {
+              owner: payload.repository.owner.login,
+              repo: payload.repository.name,
+              issue_number: payload.pull_request.number,
+              body: `Spotted some neat updates in your PR! But before it merges, let's use Inkspiff's AI to keep your documentation in sync.${mdEditors.join()}`,
+              headers: {
+                "x-github-api-version": "2022-11-28",
+              },
+            }
+          );
+        } catch (error) {
+          if (error.response) {
+            console.error(
+              `Error! Status: ${error.response.status}. Message: ${error.response.data.message}`
+            );
+          }
+          console.error(error);
+        }
       })
       .catch((error) => {
         console.error(error);
       });
-
-    try {
-      await octokit.request(
-        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
-        {
-          owner: payload.repository.owner.login,
-          repo: payload.repository.name,
-          issue_number: payload.pull_request.number,
-          body: `Spotted some neat updates in your PR! But before it merges, let's use Inkspiff's AI to keep your documentation in sync.${mdEditors.join()}`,
-          headers: {
-            "x-github-api-version": "2022-11-28",
-          },
-        }
-      );
-    } catch (error) {
-      if (error.response) {
-        console.error(
-          `Error! Status: ${error.response.status}. Message: ${error.response.data.message}`
-        );
-      }
-      console.error(error);
-    }
   } else {
     console.log("Pull request not to default branch");
   }
