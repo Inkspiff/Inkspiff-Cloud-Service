@@ -1,28 +1,38 @@
 import dotenv from "dotenv";
 import express from "express";
-import { App } from "octokit";
 import { createNodeMiddleware } from "@octokit/webhooks";
-import fs from "fs";
+import { query, where, getDocs } from "@firebase/firestore";
+
+import { octokitApp } from "./utilities/index.js";
+import { mdCollection } from "./utilities/index.js";
 
 dotenv.config();
 
 const appServer = express();
 const port = process.env.PORT || 3000;
-const appId = process.env.APP_ID;
-const webhookSecret = process.env.WEBHOOK_SECRET;
-const privateKeyPath = process.env.PRIVATE_KEY_PATH;
-const privateKey = fs.readFileSync(privateKeyPath, "utf8");
-
-const octokitApp = new App({
-  appId,
-  privateKey,
-  webhooks: {
-    secret: webhookSecret,
-  },
-});
+const editorUrl = process.env.INKSPIFF_EDITOR_URL;
 
 async function handlePullRequestOpened({ octokit, payload }) {
   if (payload.pull_request.base.ref == payload.repository.default_branch) {
+    // Create a query to get markdowns associated with the PR repository
+    const q = query(
+      mdCollection,
+      where("github", "==", payload.repository.full_name)
+    );
+
+    getDocs(q)
+      .then((querySnapshot) => {
+        const markdownEditorUrls = [];
+        querySnapshot.forEach((doc) => {
+          markdownEditorUrls.push(
+            `\n✨ ${editorUrl}/${doc.id}?pr=${payload.number} ✨`
+          );
+        });
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+
     try {
       await octokit.request(
         "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
@@ -30,8 +40,7 @@ async function handlePullRequestOpened({ octokit, payload }) {
           owner: payload.repository.owner.login,
           repo: payload.repository.name,
           issue_number: payload.pull_request.number,
-          body: `Spotted some neat updates in your PR! But before it merges, let's use Inkspiff's AI to keep your documentation in sync.
-          \n✨ https://inkspiff.com/${payload.repository.full_name}/pulls/${payload.number}/ ✨`,
+          body: `Spotted some neat updates in your PR! But before it merges, let's use Inkspiff's AI to keep your documentation in sync.${markdownEditorUrls.join()}`,
           headers: {
             "x-github-api-version": "2022-11-28",
           },
