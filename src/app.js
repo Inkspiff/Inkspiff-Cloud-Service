@@ -13,47 +13,47 @@ const port = process.env.PORT || 3000;
 const editorUrl = process.env.INKSPIFF_EDITOR_URL;
 
 async function handlePullRequestOpened({ octokit, payload }) {
+  console.log(payload.repository.full_name);
   if (payload.pull_request.base.ref == payload.repository.default_branch) {
-    // Create a query to get markdowns associated with the PR repository
     const q = query(
       mdCollection,
       where("github", "==", payload.repository.full_name)
     );
 
-    getDocs(q)
+    await getDocs(q)
       .then((querySnapshot) => {
-        const markdownEditorUrls = [];
+        let mdEditors = [];
         querySnapshot.forEach((doc) => {
-          markdownEditorUrls.push(
-            `\n✨ ${editorUrl}/${doc.id}?pr=${payload.number} ✨`
-          );
+          const stylizedUrl = `\n✨ ${editorUrl}/${doc.id}?pr=${payload.number} ✨`;
+          mdEditors.push(stylizedUrl);
+          console.log(stylizedUrl);
         });
+        console.log(mdEditors);
+        try {
+          octokit.request(
+            "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+            {
+              owner: payload.repository.owner.login,
+              repo: payload.repository.name,
+              issue_number: payload.pull_request.number,
+              body: `Spotted some neat updates in your PR! But before it merges, let's use Inkspiff's AI to keep your documentation in sync.${mdEditors.join()}`,
+              headers: {
+                "x-github-api-version": "2022-11-28",
+              },
+            }
+          );
+        } catch (error) {
+          if (error.response) {
+            console.error(
+              `Error! Status: ${error.response.status}. Message: ${error.response.data.message}`
+            );
+          }
+          console.error(error);
+        }
       })
       .catch((error) => {
         console.error(error);
       });
-
-    try {
-      await octokit.request(
-        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
-        {
-          owner: payload.repository.owner.login,
-          repo: payload.repository.name,
-          issue_number: payload.pull_request.number,
-          body: `Spotted some neat updates in your PR! But before it merges, let's use Inkspiff's AI to keep your documentation in sync.${markdownEditorUrls.join()}`,
-          headers: {
-            "x-github-api-version": "2022-11-28",
-          },
-        }
-      );
-    } catch (error) {
-      if (error.response) {
-        console.error(
-          `Error! Status: ${error.response.status}. Message: ${error.response.data.message}`
-        );
-      }
-      console.error(error);
-    }
   } else {
     console.log("Pull request not to default branch");
   }
