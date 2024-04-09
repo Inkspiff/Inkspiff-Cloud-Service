@@ -1,8 +1,9 @@
 import dotenv from "dotenv";
-import express from "express";
+import express, { response } from "express";
 import { createNodeMiddleware } from "@octokit/webhooks";
-import { query, where, getDocs } from "@firebase/firestore";
+import { query, where, getDocs, updateDoc, doc, serverTimestamp} from "@firebase/firestore";
 
+import { handler } from "./utilities/generate.js";
 import { octokitApp } from "./utilities/index.js";
 import { mdCollection } from "./utilities/index.js";
 
@@ -17,16 +18,21 @@ async function handlePullRequestOpened({ octokit, payload }) {
     // Create a query to get markdowns associated with the PR repository
     const q = query(
       mdCollection,
-      where("github", "==", payload.repository.full_name)
+      where("repo", "==", payload.repository.full_name)
     );
 
     getDocs(q)
       .then((querySnapshot) => {
-        const markdownEditorUrls = [];
-        querySnapshot.forEach((doc) => {
-          markdownEditorUrls.push(
-            `\n✨ ${editorUrl}/${doc.id}?pr=${payload.number} ✨`
-          );
+        let mdEditors = [];
+        querySnapshot.forEach( async(docSnap) => {
+          if (docSnap.type === "automatic"){
+            const diff = await fetch(payload.pull_request.diff_url)
+            const data = handler(diff);
+            updateDoc(docSnap(db, "markdowns", docSnap.id), {content: data.result, lastUpdated: serverTimestamp()});
+            const stylizedUrl = `\n✨ ${editorUrl}/${docSnap.id}?pr=${payload.number} ✨`;
+            mdEditors.push(stylizedUrl);
+            console.log(stylizedUrl);  
+          }
         });
       })
       .catch((error) => {
