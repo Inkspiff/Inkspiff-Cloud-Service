@@ -1,2 +1,2 @@
 export { octokitApp } from "./octokitApp.js";
-export { mdCollection } from "./mdCollection.js";
+export { getAutomations, getMdContent } from "./db.js";
