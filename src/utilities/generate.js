@@ -12,16 +12,19 @@ export async function generateMd(diff, content) {
   \nTHE ORIGINAL MARKDOWN: 
   \n ${content}
   \nTHE GIT DIFF:
-  \n ${diff}`
+  \n ${diff}`;
 
   try {
-    const completion = await openai.chat.completions({
-      model: "gpt-3.5-turbo-instruct",
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: prompt },
+      ],
+      model: "gpt-3.5-turbo",
       max_tokens: 3500,
       temperature: 0.6,
-      prompt,
     });
-    return { result: completion.data.choices[0].text };
+    return { result: completion.choices[0] };
   } catch (error) {
     if (error.response) {
       console.error(error.response.status, error.response.data);

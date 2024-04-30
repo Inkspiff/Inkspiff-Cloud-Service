@@ -1,6 +1,15 @@
 import dotenv from "dotenv";
 import { initializeApp, getApps, getApp } from "@firebase/app";
-import { getFirestore, collection, doc, getDoc, query, where } from "@firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  query,
+  where,
+  updateDoc,
+  serverTimestamp,
+} from "@firebase/firestore";
 
 dotenv.config();
 
@@ -23,11 +32,11 @@ export const markdowns = collection(db, "markdowns");
 
 export function getAutomations(repoFullName) {
   const [repoOwner, repoName] = repoFullName.split("/");
-  console.log(`PR webhook for ${repoFullName} received`)
+  console.log(`PR webhook for ${repoFullName} received`);
   const q = query(
     automations,
-    where("owner", "==", repoOwner.toLowerCase()),
-    where("repo", "==", repoName.toLowerCase()),
+    where("owner", "==", repoOwner),
+    where("repo", "==", repoName)
   );
   return q;
 }
@@ -36,12 +45,19 @@ export async function getMdContent(mdID) {
   const mdRef = doc(db, "markdowns", mdID);
   await getDoc(mdRef).then((mdDocSnap) => {
     if (mdDocSnap.exists()) {
-      console.log({ g: mdDocSnap.data() });
       const md = {
         id: mdDocSnap.id,
         ...mdDocSnap.data(),
       };
       return md;
     }
+  });
+}
+
+export async function updateMarkdown(newContent, docSnap) {
+  const mdRef = doc(db, "markdowns", docSnap.id);
+  updateDoc(mdRef, {
+    content: newContent,
+    lastUpdated: serverTimestamp(),
   });
 }
